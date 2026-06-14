@@ -1,6 +1,6 @@
 -- =============================================
 -- HOTEL MANAGEMENT SYSTEM
--- Database: hotel_management_db
+-- Database : hotel_management_db
 -- =============================================
 
 CREATE DATABASE IF NOT EXISTS hotel_management_db;-- Query 12: Reservations with Payment Status (JOIN)
