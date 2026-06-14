@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Pearl Hotels — Management System</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+    :root {
+      --navy:#0f1f4a; --navy-light:#1a2f68; --teal:#0d9488; --teal-light:#14b8a6;
+      --teal-pale:#ccfbf1; --green:#10b981; --red:#ef4444; --amber:#f59e0b;
+      --blue:#3b82f6; --bg:#f0f4f8; --white:#ffffff; --border:#e2e8f0;
+      --text:#0f172a; --text2:#64748b; --text3:#94a3b8;
+      --shadow:0 2px 16px rgba(15,31,74,0.08); --shadow-lg:0 8px 40px rgba(15,31,74,0.14);
+      --r:14px; --r-sm:8px;
+    }
+    body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); display:flex; min-height:100vh; }
+    .sidebar { width:250px; min-height:100vh; background:var(--navy); position:fixed; top:0; left:0; display:flex; flex-direction:column; z-index:100; }
+    .logo-area { padding:26px 20px 18px; border-bottom:1px solid rgba(255,255,255,0.07); }
+    .logo-icon { width:44px; height:44px; background:linear-gradient(135deg,var(--teal),var(--teal-light)); border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:22px; margin-bottom:12px; }
+    .logo-area h1 { font-family:'Playfair Display',serif; font-size:17px; color:#fff; line-height:1.3; }
+    .logo-area p { font-size:11px; color:var(--text3); margin-top:3px; letter-spacing:0.4px; }
+    .nav-section { font-size:10px; font-weight:700; color:var(--text3); letter-spacing:1.2px; text-transform:uppercase; padding:18px 20px 6px; }
+    .nav-links { padding:0 10px; flex:1; }
+    .nav-item { display:flex; align-items:center; gap:11px; padding:11px 12px; border-radius:10px; cursor:pointer; color:#94a3b8; font-size:14px; font-weight:500; margin-bottom:2px; transition:background 0.18s,color 0.18s; user-select:none; }
+    .nav-item:hover { background:rgba(255,255,255,0.06); color:#fff; }
+    .nav-item.active { background:linear-gradient(135deg,var(--teal),var(--teal-light)); color:#fff; box-shadow:0 4px 14px rgba(13,148,136,0.3); }
+    .nav-icon { font-size:17px; width:20px; text-align:center; flex-shrink:0; }
+    .nav-badge { margin-left:auto; background:var(--teal); color:#fff; font-size:10px; font-weight:700; padding:2px 7px; border-radius:20px; }
+    .sidebar-footer { padding:14px; border-top:1px solid rgba(255,255,255,0.07); }
+    .user-card { display:flex; align-items:center; gap:11px; background:rgba(255,255,255,0.05); padding:10px 12px; border-radius:10px; }
+    .user-ava { width:36px; height:36px; background:linear-gradient(135deg,var(--teal),var(--navy-light)); border-radius:9px; display:flex; align-items:center; justify-content:center; color:#fff; font-weight:700; font-size:14px; flex-shrink:0; }
+    .user-card h4 { font-size:13px; color:#fff; font-weight:600; }
+    .user-card p { font-size:11px; color:var(--text3); }
+    .main { margin-left:250px; flex:1; display:flex; flex-direction:column; }
+    .topbar { background:var(--white); border-bottom:1px solid var(--border); padding:15px 30px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:50; }
+    .topbar-title { font-size:19px; font-weight:700; }
+    .topbar-sub { font-size:12px; color:var(--text2); margin-top:1px; }
+    .topbar-right { display:flex; align-items:center; gap:10px; }
+    .icon-btn { width:38px; height:38px; border:1px solid var(--border); border-radius:10px; background:var(--white); display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:16px; transition:background 0.15s; position:relative; }
+    .icon-btn:hover { background:var(--bg); }
+    .notif-dot { width:7px; height:7px; background:var(--red); border-radius:50%; position:absolute; top:7px; right:7px; border:2px solid #fff; }
+    .search-box { display:flex; align-items:center; gap:8px; background:var(--bg); border:1px solid var(--border); border-radius:10px; padding:8px 14px; width:220px; }
+    .search-box input { border:none; background:transparent; font-size:13px; color:var(--text); outline:none; width:100%; font-family:'Inter',sans-serif; }
+    .search-box input::placeholder { color:var(--text3); }
+    .content { padding:26px 30px; flex:1; }
+    .page { display:none; }
+    .page.active { display:block; }
+    .page-head { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:22px; }
+    .page-head h2 { font-size:21px; font-weight:800; }
+    .page-head p { font-size:13px; color:var(--text2); margin-top:3px; }
+    .stats-row { display:grid; grid-template-columns:repeat(4,1fr); gap:18px; margin-bottom:24px; }
+    .stat-card { background:var(--white); border-radius:var(--r); padding:20px 22px; border:1px solid var(--border); box-shadow:var(--shadow); position:relative; overflow:hidden; transition:transform 0.2s; }
+    .stat-card:hover { transform:translateY(-2px); box-shadow:var(--shadow-lg); }
+    .stat-ico { width:44px; height:44px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:20px; margin-bottom:14px; }
+    .ico-blue{background:#dbeafe;} .ico-teal{background:var(--teal-pale);} .ico-green{background:#d1fae5;} .ico-amber{background:#fef3c7;} .ico-red{background:#fee2e2;} .ico-purple{background:#ede9fe;}
+    .stat-val { font-size:28px; font-weight:800; line-height:1; margin-bottom:4px; }
+    .stat-lbl { font-size:13px; color:var(--text2); font-weight:500; }
+    .stat-trend { font-size:11px; font-weight:600; margin-top:9px; display:flex; align-items:center; gap:4px; }
+    .trend-up{color:var(--green);} .trend-down{color:var(--red);}
+    .card { background:var(--white); border-radius:var(--r); border:1px solid var(--border); box-shadow:var(--shadow); overflow:hidden; margin-bottom:22px; }
+    .card-head { padding:18px 22px 14px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; }
+    .card-head h3 { font-size:15px; font-weight:700; }
+    .card-head p { font-size:12px; color:var(--text2); margin-top:2px; }
+    .card-body { padding:18px 22px; }
+    .grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-bottom:22px; }
+    .grid-3 { display:grid; grid-template-columns:repeat(3,1fr); gap:20px; margin-bottom:22px; }
+    .tbl-wrap { overflow-x:auto; }
+    table { width:100%; border-collapse:collapse; font-size:13.5px; }
+    thead th { background:var(--bg); padding:11px 16px; text-align:left; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.7px; color:var(--text2); border-bottom:1px solid var(--border); }
+    tbody tr { border-bottom:1px solid var(--border); transition:background 0.12s; }
+    tbody tr:hover { background:#f8fafc; }
+    tbody tr:last-child { border-bottom:none; }
+    tbody td { padding:12px 16px; vertical-align:middle; }
+    .badge { display:inline-flex; align-items:center; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:600; }
+    .b-green{background:#d1fae5;color:#065f46;} .b-red{background:#fee2e2;color:#991b1b;} .b-amber{background:#fef3c7;color:#92400e;} .b-blue{background:#dbeafe;color:#1e40af;} .b-teal{background:var(--teal-pale);color:#0f766e;} .b-gray{background:#f1f5f9;color:#475569;} .b-purple{background:#ede9fe;color:#5b21b6;}
+    .btn { display:inline-flex; align-items:center; gap:6px; padding:9px 16px; border-radius:var(--r-sm); font-size:13px; font-weight:600; cursor:pointer; border:none; outline:none; text-decoration:none; transition:all 0.18s; font-family:'Inter',sans-serif; }
+    .btn-navy { background:linear-gradient(135deg,var(--navy),var(--navy-light)); color:#fff; box-shadow:0 4px 12px rgba(15,31,74,0.22); }
+    .btn-navy:hover { transform:translateY(-1px); box-shadow:0 6px 18px rgba(15,31,74,0.3); }
+    .btn-teal { background:linear-gradient(135deg,var(--teal),var(--teal-light)); color:#fff; box-shadow:0 4px 12px rgba(13,148,136,0.22); }
+    .btn-outline { background:transparent; color:var(--text2); border:1px solid var(--border); }
+    .btn-outline:hover { background:var(--bg); color:var(--text); }
+    .btn-sm { padding:6px 12px; font-size:12px; }
+    .filter-bar { display:flex; align-items:center; gap:10px; margin-bottom:18px; flex-wrap:wrap; }
+    .f-search { display:flex; align-items:center; gap:8px; background:var(--white); border:1px solid var(--border); border-radius:var(--r-sm); padding:9px 14px; flex:1; min-width:180px; }
+    .f-search input { border:none; background:transparent; font-size:13px; color:var(--text); outline:none; width:100%; font-family:'Inter',sans-serif; }
+    .f-search input::placeholder { color:var(--text3); }
+    .f-select { padding:9px 12px; border:1px solid var(--border); border-radius:var(--r-sm); font-size:13px; background:var(--white); color:var(--text); outline:none; cursor:pointer; font-family:'Inter',sans-serif; }
+    .ava-cell { display:flex; align-items:center; gap:10px; }
+    .ava { width:34px; height:34px; border-radius:9px; background:linear-gradient(135deg,var(--navy),var(--teal)); color:#fff; font-size:12px; font-weight:700; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+    .ava-cell .nm { font-weight:600; font-size:13.5px; }
+    .ava-cell .sub { font-size:12px; color:var(--text2); }
+    .overlay { position:fixed; inset:0; background:rgba(10,20,50,0.55); backdrop-filter:blur(4px); z-index:200; display:none; align-items:center; justify-content:center; }
+    .overlay.open { display:flex; }
+    .modal { background:var(--white); border-radius:18px; width:540px; max-width:95vw; max-height:90vh; overflow-y:auto; box-shadow:0 24px 60px rgba(0,0,0,0.18); animation:popIn 0.22s ease; }
+    @keyframes popIn { from{opacity:0;transform:scale(0.94) translateY(12px);} to{opacity:1;transform:scale(1) translateY(0);} }
+    .modal-head { padding:22px 26px 14px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; }
+    .modal-head h3 { font-size:17px; font-weight:700; }
+    .modal-close { width:30px; height:30px; border-radius:8px; border:none; background:var(--bg); cursor:pointer; font-size:15px; display:flex; align-items:center; justify-content:center; transition:background 0.15s; }
+    .modal-close:hover { background:#fee2e2; color:var(--red); }
+    .modal-body { padding:22px 26px; }
+    .modal-foot { padding:14px 26px 22px; display:flex; justify-content:flex-end; gap:10px; border-top:1px solid var(--border); }
+    .form-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+    .form-group { display:flex; flex-direction:column; gap:5px; }
+    .form-group.full { grid-column:1/-1; }
+    .form-label { font-size:11px; font-weight:700; color:var(--text2); text-transform:uppercase; letter-spacing:0.5px; }
+    .form-input,.form-select,.form-textarea { padding:10px 13px; border:1px solid var(--border); border-radius:var(--r-sm); font-size:13.5px; font-family:'Inter',sans-serif; color:var(--text); background:var(--white); outline:none; transition:border-color 0.18s,box-shadow 0.18s; }
+    .form-input:focus,.form-select:focus,.form-textarea:focus { border-color:var(--teal); box-shadow:0 0 0 3px rgba(13,148,136,0.1); }
+    .bar-chart { display:flex; flex-direction:column; gap:10px; }
+    .bar-row { display:flex; align-items:center; gap:12px; }
+    .bar-lbl { font-size:12px; color:var(--text2); font-weight:500; width:70px; text-align:right; flex-shrink:0; }
+    .bar-track { flex:1; height:9px; background:var(--bg); border-radius:20px; overflow:hidden; }
+    .bar-fill { height:100%; border-radius:20px; background:linear-gradient(90deg,var(--teal),var(--teal-light)); }
+    .bar-num { font-size:12px; font-weight:700; width:36px; color:var(--text); }
+    .activity { display:flex; flex-direction:column; }
+    .act-item { display:flex; align-items:flex-start; gap:12px; padding:13px 0; border-bottom:1px solid var(--border); }
+    .act-item:last-child { border-bottom:none; }
+    .act-ico { width:36px; height:36px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:16px; flex-shrink:0; }
+    .act-body { flex:1; }
+    .act-body strong { font-size:13px; font-weight:600; display:block; }
+    .act-body span { font-size:12px; color:var(--text2); }
+    .act-time { font-size:11px; color:var(--text3); white-space:nowrap; }
+    .room-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:14px; }
+    .room-tile { background:var(--white); border-radius:var(--r); border:2px solid var(--border); padding:18px 14px 14px; text-align:center; transition:all 0.18s; cursor:pointer; }
+    .room-tile:hover { transform:translateY(-2px); box-shadow:var(--shadow); }
+    .room-tile.avail{border-color:var(--green);} .room-tile.occupied{border-color:var(--red);} .room-tile.maint{border-color:var(--amber);}
+    .room-no { font-size:24px; font-weight:800; }
+    .room-type { font-size:11px; color:var(--text2); margin:3px 0 10px; }
+    #toast { position:fixed; bottom:24px; right:24px; background:var(--text); color:#fff; padding:13px 18px; border-radius:12px; font-size:13.5px; font-weight:500; box-shadow:0 8px 30px rgba(0,0,0,0.2); z-index:999; transform:translateY(70px); opacity:0; transition:all 0.3s ease; display:flex; align-items:center; gap:8px; min-width:200px; }
+    #toast.show { transform:translateY(0); opacity:1; }
+    #toast.s-green{background:var(--green);} #toast.s-red{background:var(--red);}
+    .summary-item { display:flex; align-items:center; justify-content:space-between; padding:11px 0; border-bottom:1px solid var(--border); font-size:13.5px; }
+    .summary-item:last-child { border-bottom:none; }
+    .summary-item .s-lbl { color:var(--text2); }
+    .summary-item .s-val { font-weight:700; }
+    .loading { text-align:center; padding:30px; color:var(--text3); font-size:14px; }
+  </style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="logo-area">
+    <div class="logo-icon">🏨</div>
+    <h1>Pearl Hotels</h1>
+    <p>Management System</p>
+  </div>
+  <div style="overflow-y:auto;flex:1;">
+    <div class="nav-section">Main</div>
+    <div class="nav-links">
+      <div class="nav-item active" onclick="showPage('dashboard',this)"><span class="nav-icon">📊</span> Dashboard</div>
+    </div>
+    <div class="nav-section">Operations</div>
+    <div class="nav-links">
+      <div class="nav-item" onclick="showPage('reservations',this)"><span class="nav-icon">📅</span> Reservations <span class="nav-badge" id="res-badge">6</span></div>
+      <div class="nav-item" onclick="showPage('rooms',this)"><span class="nav-icon">🛏️</span> Rooms</div>
+      <div class="nav-item" onclick="showPage('customers',this)"><span class="nav-icon">👥</span> Customers</div>
+      <div class="nav-item" onclick="showPage('payments',this)"><span class="nav-icon">💳</span> Payments</div>
+    </div>
+    <div class="nav-section">Management</div>
+    <div class="nav-links">
+      <div class="nav-item" onclick="showPage('employees',this)"><span class="nav-icon">👷</span> Employees</div>
+      <div class="nav-item" onclick="showPage('services',this)"><span class="nav-icon">🛎️</span> Services</div>
+      <div class="nav-item" onclick="showPage('branches',this)"><span class="nav-icon">🏢</span> Branches</div>
+    </div>
+  </div>
+  <div class="sidebar-footer">
+    <div class="user-card">
+      <div class="user-ava">SA</div>
+      <div><h4>Saad Ashraf</h4><p>Admin</p></div>
+    </div>
+  </div>
+</aside>
+
+<div class="main">
+  <div class="topbar">
+    <div>
+      <div class="topbar-title" id="topbar-title">Dashboard</div>
+      <div class="topbar-sub" id="topbar-sub">Welcome back, Anas — Here's what's happening today</div>
+    </div>
+    <div class="topbar-right">
+      <div class="search-box"><span>🔍</span><input type="text" placeholder="Search anything..."></div>
+      <div class="icon-btn">🔔<span class="notif-dot"></span></div>
+      <div class="icon-btn">⚙️</div>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- DASHBOARD PAGE -->
+    <div class="page active" id="page-dashboard">
+      <div class="stats-row">
+        <div class="stat-card">
+          <div class="stat-ico ico-blue">📅</div>
+          <div class="stat-val" id="stat-reservations">...</div>
+          <div class="stat-lbl">Total Reservations</div>
+          <div class="stat-trend trend-up">↑ Live from database</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-ico ico-teal">🛏️</div>
+          <div class="stat-val" id="stat-rooms">...</div>
+          <div class="stat-lbl">Total Rooms</div>
+          <div class="stat-trend trend-up">↑ Live from database</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-ico ico-green">💰</div>
+          <div class="stat-val" id="stat-revenue">...</div>
+          <div class="stat-lbl">Revenue Collected</div>
+          <div class="stat-trend trend-up">↑ Live from database</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-ico ico-amber">👥</div>
+          <div class="stat-val" id="stat-customers">...</div>
+          <div class="stat-lbl">Registered Customers</div>
+          <div class="stat-trend trend-up">↑ Live from database</div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-head"><div><h3>Revenue by Branch</h3><p>Total payments received per branch</p></div></div>
+          <div class="card-body">
+            <div class="bar-chart">
+              <div class="bar-row"><div class="bar-lbl">Pearl Gulberg</div><div class="bar-track"><div class="bar-fill" style="width:85%"></div></div><div class="bar-num">85K</div></div>
+              <div class="bar-row"><div class="bar-lbl">Pearl DHA</div><div class="bar-track"><div class="bar-fill" style="width:40%"></div></div><div class="bar-num">40K</div></div>
+              <div class="bar-row"><div class="bar-lbl">Royal Blue</div><div class="bar-track"><div class="bar-fill" style="width:68%"></div></div><div class="bar-num">68K</div></div>
+              <div class="bar-row"><div class="bar-lbl">Royal F-10</div><div class="bar-track"><div class="bar-fill" style="width:32%"></div></div><div class="bar-num">32K</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head"><div><h3>Recent Activity</h3><p>Latest system events</p></div></div>
+          <div class="card-body">
+            <div class="activity">
+              <div class="act-item"><div class="act-ico ico-teal">📅</div><div class="act-body"><strong>New reservation confirmed</strong><span>Ali Khan — Room 102 · Pearl Gulberg</span></div><div class="act-time">2 min ago</div></div>
+              <div class="act-item"><div class="act-ico ico-green">💳</div><div class="act-body"><strong>Payment received</strong><span>Ahmed Raza — Rs 24,000 via Cash</span></div><div class="act-time">18 min ago</div></div>
+              <div class="act-item"><div class="act-ico ico-blue">👤</div><div class="act-body"><strong>New customer registered</strong><span>Anas Javed — Gujranwala</span></div><div class="act-time">1 hr ago</div></div>
+              <div class="act-item"><div class="act-ico ico-amber">🛎️</div><div class="act-body"><strong>Service booked</strong><span>Hamza Nawaz — Spa × 1</span></div><div class="act-time">3 hr ago</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-head"><div><h3>Room Status Overview</h3><p>Across all branches</p></div></div>
+          <div class="card-body" id="room-status-overview"><div class="loading">Loading...</div></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><div><h3>Payment Summary</h3><p>Current billing status</p></div></div>
+          <div class="card-body" id="payment-summary"><div class="loading">Loading...</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RESERVATIONS PAGE -->
+    <div class="page" id="page-reservations">
+      <div class="page-head">
+        <div><h2>Reservations</h2><p>Manage all hotel room bookings</p></div>
+        <button class="btn btn-navy" onclick="openModal('modal-add-res')">＋ New Reservation</button>
+      </div>
+      <div class="card">
+        <div class="card-head"><div><h3>All Reservations</h3><p id="res-count">Loading...</p></div></div>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>Res. ID</th><th>Customer ID</th><th>Room ID</th><th>Check-In</th><th>Check-Out</th><th>Guests</th><th>Status</th></tr></thead>
+            <tbody id="reservations-tbody"><tr><td colspan="7" class="loading">Loading from database...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ROOMS PAGE -->
+    <div class="page" id="page-rooms">
+      <div class="page-head">
+        <div><h2>Rooms</h2><p>Room availability across all branches</p></div>
+      </div>
+      <div class="card" style="margin-bottom:20px">
+        <div class="card-head"><div><h3>Room Map</h3><p>Visual availability overview</p></div></div>
+        <div class="card-body"><div class="room-grid" id="room-grid"><div class="loading">Loading rooms...</div></div></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><div><h3>Room Details</h3><p id="rooms-count">Loading...</p></div></div>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>Room ID</th><th>Room No.</th><th>Branch ID</th><th>Type ID</th><th>Floor</th><th>Status</th></tr></thead>
+            <tbody id="rooms-tbody"><tr><td colspan="6" class="loading">Loading from database...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- CUSTOMERS PAGE -->
+    <div class="page" id="page-customers">
+      <div class="page-head">
+        <div><h2>Customers</h2><p>All registered guests</p></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><div><h3>Customer List</h3><p id="customers-count">Loading...</p></div></div>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>ID</th><th>Customer</th><th>CNIC / Passport</th><th>Phone</th><th>City</th><th>Email</th></tr></thead>
+            <tbody id="customers-tbody"><tr><td colspan="6" class="loading">Loading from database...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAYMENTS PAGE -->
+    <div class="page" id="page-payments">
+      <div class="page-head">
+        <div><h2>Payments</h2><p>Billing and payment records</p></div>
+      </div>
+      <div class="stats-row" style="grid-template-columns:repeat(3,1fr);margin-bottom:20px;">
+        <div class="stat-card"><div class="stat-ico ico-green">✅</div><div class="stat-val" style="font-size:22px;" id="pay-paid">...</div><div class="stat-lbl">Total Paid</div></div>
+        <div class="stat-card"><div class="stat-ico ico-amber">⏳</div><div class="stat-val" style="font-size:22px;" id="pay-pending">...</div><div class="stat-lbl">Pending</div></div>
+        <div class="stat-card"><div class="stat-ico ico-blue">💳</div><div class="stat-val" style="font-size:22px;" id="pay-total">...</div><div class="stat-lbl">Total Transactions</div></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><div><h3>Payment Records</h3><p>All transactions</p></div></div>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>Pay ID</th><th>Reservation ID</th><th>Amount</th><th>Date</th><th>Method</th><th>Status</th></tr></thead>
+            <tbody id="payments-tbody"><tr><td colspan="6" class="loading">Loading from database...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- EMPLOYEES PAGE -->
+    <div class="page" id="page-employees">
+      <div class="page-head">
+        <div><h2>Employees</h2><p>Staff management across all branches</p></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><div><h3>Staff Directory</h3><p id="employees-count">Loading...</p></div></div>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>ID</th><th>Employee</th><th>Branch ID</th><th>Position</th><th>Phone</th><th>Salary</th></tr></thead>
+            <tbody id="employees-tbody"><tr><td colspan="6" class="loading">Loading from database...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- SERVICES PAGE -->
+    <div class="page" id="page-services">
+      <div class="page-head">
+        <div><h2>Services</h2><p>Additional hotel services</p></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><div><h3>Available Services</h3><p id="services-count">Loading...</p></div></div>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>ID</th><th>Service Name</th><th>Price</th><th>Status</th></tr></thead>
+            <tbody id="services-tbody"><tr><td colspan="4" class="loading">Loading from database...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- BRANCHES PAGE -->
+    <div class="page" id="page-branches">
+      <div class="page-head">
+        <div><h2>Branches</h2><p>Hotel branches and locations</p></div>
+      </div>
+      <div class="grid-2" id="branches-grid">
+        <div class="loading">Loading branches...</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- MODALS -->
+<div class="overlay" id="modal-add-res">
+  <div class="modal">
+    <div class="modal-head"><h3>📅 New Reservation</h3><button class="modal-close" onclick="closeModal('modal-add-res')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group"><label class="form-label">Customer ID</label><input type="number" class="form-input" placeholder="e.g. 1"></div>
+        <div class="form-group"><label class="form-label">Room ID</label><input type="number" class="form-input" placeholder="e.g. 1"></div>
+        <div class="form-group"><label class="form-label">Check-In Date</label><input type="date" class="form-input"></div>
+        <div class="form-group"><label class="form-label">Check-Out Date</label><input type="date" class="form-input"></div>
+        <div class="form-group"><label class="form-label">Number of Guests</label><input type="number" class="form-input" placeholder="e.g. 2" min="1"></div>
+        <div class="form-group"><label class="form-label">Status</label><select class="form-select"><option>Pending</option><option>Confirmed</option></select></div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-outline" onclick="closeModal('modal-add-res')">Cancel</button>
+      <button class="btn btn-navy" onclick="closeModal('modal-add-res');showToast('Reservation added successfully ✓','s-green')">Save Reservation</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast">✓ <span id="toast-msg">Done</span></div>
+
+<script>
+  const API = 'http://127.0.0.1:5000';
+
+  // ── Navigation ──────────────────────────────
+  function showPage(name, el) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.getElementById('page-' + name).classList.add('active');
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    el.classList.add('active');
+    const titles = {
+      dashboard:    ['Dashboard',    "Welcome back, Saad — Here's what's happening today"],
+      reservations: ['Reservations', 'Manage all hotel room bookings'],
+      rooms:        ['Rooms',        'Room availability across all branches'],
+      customers:    ['Customers',    'All registered guests'],
+      payments:     ['Payments',     'Billing and payment records'],
+      employees:    ['Employees',    'Staff management across all branches'],
+      services:     ['Services',     'Additional hotel services & bookings'],
+      branches:     ['Branches',     'Hotel branches and locations'],
+    };
+    if (titles[name]) {
+      document.getElementById('topbar-title').textContent = titles[name][0];
+      document.getElementById('topbar-sub').textContent   = titles[name][1];
+    }
+  }
+
+  function openModal(id)  { document.getElementById(id).classList.add('open'); }
+  function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+  document.querySelectorAll('.overlay').forEach(ov => {
+    ov.addEventListener('click', function(e) { if(e.target===this) this.classList.remove('open'); });
+  });
+
+  function showToast(msg, type) {
+    const t = document.getElementById('toast');
+    t.className = 'show ' + (type||'');
+    document.getElementById('toast-msg').textContent = msg;
+    setTimeout(() => { t.className=''; }, 3000);
+  }
+
+  // ── Status badge helper ──────────────────────
+  function statusBadge(status) {
+    const map = { Confirmed:'b-teal', Pending:'b-amber', Completed:'b-green', Cancelled:'b-red', Available:'b-green', Occupied:'b-red', Maintenance:'b-amber', Paid:'b-green', Refunded:'b-gray' };
+    return `<span class="badge ${map[status]||'b-gray'}">${status}</span>`;
+  }
+
+  function initials(first, last) {
+    return ((first||'')[0]||('')).toUpperCase() + ((last||'')[0]||('')).toUpperCase();
+  }
+
+  // ── Fetch & Render ───────────────────────────
+
+  async function loadDashboard() {
+    try {
+      const [customers, rooms, payments, reservations] = await Promise.all([
+        fetch(`${API}/customers`).then(r=>r.json()),
+        fetch(`${API}/rooms`).then(r=>r.json()),
+        fetch(`${API}/payments`).then(r=>r.json()),
+        fetch(`${API}/reservations`).then(r=>r.json()),
+      ]);
+
+      document.getElementById('stat-customers').textContent = customers.length;
+      document.getElementById('stat-rooms').textContent = rooms.length;
+      document.getElementById('stat-reservations').textContent = reservations.length;
+      document.getElementById('res-badge').textContent = reservations.length;
+
+      const paid = payments.filter(p=>p.PaymentStatus==='Paid').reduce((s,p)=>s+Number(p.Amount),0);
+      document.getElementById('stat-revenue').textContent = `Rs ${(paid/1000).toFixed(0)}K`;
+
+      // Room status
+      const avail = rooms.filter(r=>r.Status==='Available').length;
+      const occ   = rooms.filter(r=>r.Status==='Occupied').length;
+      const maint = rooms.filter(r=>r.Status==='Maintenance').length;
+      document.getElementById('room-status-overview').innerHTML = `
+        <div class="summary-item"><span class="s-lbl">🟢 Available</span><span class="s-val" style="color:var(--green)">${avail} rooms</span></div>
+        <div class="summary-item"><span class="s-lbl">🔴 Occupied</span><span class="s-val" style="color:var(--red)">${occ} rooms</span></div>
+        <div class="summary-item"><span class="s-lbl">🟡 Maintenance</span><span class="s-val" style="color:var(--amber)">${maint} room(s)</span></div>
+        <div class="summary-item"><span class="s-lbl">Total Rooms</span><span class="s-val">${rooms.length} rooms</span></div>
+        <div class="summary-item"><span class="s-lbl">Occupancy Rate</span><span class="s-val" style="color:var(--teal)">${Math.round(occ/rooms.length*100)}%</span></div>`;
+
+      // Payment summary
+      const pending = payments.filter(p=>p.PaymentStatus==='Pending').reduce((s,p)=>s+Number(p.Amount),0);
+      const cardPay = payments.filter(p=>p.PaymentMethod==='Card').length;
+      const cashPay = payments.filter(p=>p.PaymentMethod==='Cash').length;
+      document.getElementById('payment-summary').innerHTML = `
+        <div class="summary-item"><span class="s-lbl">✅ Paid</span><span class="s-val" style="color:var(--green)">Rs ${paid.toLocaleString()}</span></div>
+        <div class="summary-item"><span class="s-lbl">⏳ Pending</span><span class="s-val" style="color:var(--amber)">Rs ${pending.toLocaleString()}</span></div>
+        <div class="summary-item"><span class="s-lbl">Total Payments</span><span class="s-val">${payments.length} transactions</span></div>
+        <div class="summary-item"><span class="s-lbl">Card Payments</span><span class="s-val">${cardPay}</span></div>
+        <div class="summary-item"><span class="s-lbl">Cash Payments</span><span class="s-val">${cashPay}</span></div>`;
+
+    } catch(e) { showToast('Could not connect to Flask API','s-red'); }
+  }
+
+  async function loadReservations() {
+    try {
+      const data = await fetch(`${API}/reservations`).then(r=>r.json());
+      document.getElementById('res-count').textContent = `${data.length} total reservations`;
+      document.getElementById('reservations-tbody').innerHTML = data.map(r=>`
+        <tr>
+          <td><strong>#RES-00${r.ReservationID}</strong></td>
+          <td>C-00${r.CustomerID}</td>
+          <td>Room ${r.RoomID}</td>
+          <td>${r.CheckInDate}</td>
+          <td>${r.CheckOutDate}</td>
+          <td>${r.NumberOfGuests}</td>
+          <td>${statusBadge(r.ReservationStatus)}</td>
+        </tr>`).join('');
+    } catch(e) { document.getElementById('reservations-tbody').innerHTML = '<tr><td colspan="7">Error loading data</td></tr>'; }
+  }
+
+  async function loadRooms() {
+    try {
+      const data = await fetch(`${API}/rooms`).then(r=>r.json());
+      document.getElementById('rooms-count').textContent = `All ${data.length} rooms`;
+      const typeMap = {1:'Single',2:'Double',3:'Deluxe',4:'Suite'};
+      document.getElementById('room-grid').innerHTML = data.map(r=>{
+        const cls = r.Status==='Available'?'avail':r.Status==='Occupied'?'occupied':'maint';
+        return `<div class="room-tile ${cls}"><div class="room-no">${r.RoomNumber}</div><div class="room-type">${typeMap[r.RoomTypeID]||'Room'} · Floor ${r.FloorNumber}</div>${statusBadge(r.Status)}</div>`;
+      }).join('');
+      document.getElementById('rooms-tbody').innerHTML = data.map(r=>`
+        <tr>
+          <td>${r.RoomID}</td>
+          <td><strong>${r.RoomNumber}</strong></td>
+          <td>${r.BranchID}</td>
+          <td>${typeMap[r.RoomTypeID]||r.RoomTypeID}</td>
+          <td>${r.FloorNumber}</td>
+          <td>${statusBadge(r.Status)}</td>
+        </tr>`).join('');
+    } catch(e) { document.getElementById('rooms-tbody').innerHTML = '<tr><td colspan="6">Error loading data</td></tr>'; }
+  }
+
+  async function loadCustomers() {
+    try {
+      const data = await fetch(`${API}/customers`).then(r=>r.json());
+      document.getElementById('customers-count').textContent = `${data.length} registered customers`;
+      document.getElementById('customers-tbody').innerHTML = data.map(c=>`
+        <tr>
+          <td>C-00${c.CustomerID}</td>
+          <td><div class="ava-cell"><div class="ava">${initials(c.FirstName,c.LastName)}</div><div><div class="nm">${c.FirstName} ${c.LastName}</div></div></div></td>
+          <td>${c.CNIC_Passport}</td>
+          <td>${c.Phone}</td>
+          <td>${c.Address||'-'}</td>
+          <td>${c.Email||'-'}</td>
+        </tr>`).join('');
+    } catch(e) { document.getElementById('customers-tbody').innerHTML = '<tr><td colspan="6">Error loading data</td></tr>'; }
+  }
+
+  async function loadPayments() {
+    try {
+      const data = await fetch(`${API}/payments`).then(r=>r.json());
+      const paid    = data.filter(p=>p.PaymentStatus==='Paid').reduce((s,p)=>s+Number(p.Amount),0);
+      const pending = data.filter(p=>p.PaymentStatus==='Pending').reduce((s,p)=>s+Number(p.Amount),0);
+      document.getElementById('pay-paid').textContent    = `Rs ${paid.toLocaleString()}`;
+      document.getElementById('pay-pending').textContent = `Rs ${pending.toLocaleString()}`;
+      document.getElementById('pay-total').textContent   = data.length;
+      document.getElementById('payments-tbody').innerHTML = data.map(p=>`
+        <tr>
+          <td><strong>PAY-00${p.PaymentID}</strong></td>
+          <td>#RES-00${p.ReservationID}</td>
+          <td><strong>Rs ${Number(p.Amount).toLocaleString()}</strong></td>
+          <td>${p.PaymentDate}</td>
+          <td>${p.PaymentMethod}</td>
+          <td>${statusBadge(p.PaymentStatus)}</td>
+        </tr>`).join('');
+    } catch(e) { document.getElementById('payments-tbody').innerHTML = '<tr><td colspan="6">Error loading data</td></tr>'; }
+  }
+
+  async function loadEmployees() {
+    try {
+      const data = await fetch(`${API}/employees`).then(r=>r.json());
+      document.getElementById('employees-count').textContent = `${data.length} employees`;
+      document.getElementById('employees-tbody').innerHTML = data.map(e=>`
+        <tr>
+          <td>E-00${e.EmployeeID}</td>
+          <td><div class="ava-cell"><div class="ava">${initials(e.FirstName,e.LastName)}</div><div><div class="nm">${e.FirstName} ${e.LastName}</div></div></div></td>
+          <td>${e.BranchID}</td>
+          <td><span class="badge ${e.Position==='Manager'?'b-purple':e.Position==='Accountant'?'b-teal':'b-blue'}">${e.Position}</span></td>
+          <td>${e.Phone||'-'}</td>
+          <td><strong>Rs ${Number(e.Salary).toLocaleString()}</strong></td>
+        </tr>`).join('');
+    } catch(e) { document.getElementById('employees-tbody').innerHTML = '<tr><td colspan="6">Error loading data</td></tr>'; }
+  }
+
+  async function loadServices() {
+    try {
+      const data = await fetch(`${API}/services`).then(r=>r.json());
+      document.getElementById('services-count').textContent = `${data.length} services offered`;
+      document.getElementById('services-tbody').innerHTML = data.map(s=>`
+        <tr>
+          <td>S-00${s.ServiceID}</td>
+          <td>${s.ServiceName}</td>
+          <td><strong>Rs ${Number(s.ServicePrice).toLocaleString()}</strong></td>
+          <td><span class="badge b-green">Active</span></td>
+        </tr>`).join('');
+    } catch(e) { document.getElementById('services-tbody').innerHTML = '<tr><td colspan="4">Error loading data</td></tr>'; }
+  }
+
+  async function loadBranches() {
+    try {
+      const data = await fetch(`${API}/branches`).then(r=>r.json());
+      const colors = [
+        'background:linear-gradient(135deg,var(--navy),var(--navy-light))',
+        'background:linear-gradient(135deg,var(--navy),var(--navy-light))',
+        'background:linear-gradient(135deg,var(--teal),var(--teal-light))',
+        'background:linear-gradient(135deg,var(--teal),var(--teal-light))',
+      ];
+      document.getElementById('branches-grid').innerHTML = data.map((b,i)=>`
+        <div class="card" style="margin-bottom:0">
+          <div class="card-head" style="${colors[i]||colors[0]};border-radius:14px 14px 0 0;">
+            <div><h3 style="color:#fff">${b.BranchName}</h3><p style="color:rgba(255,255,255,0.7)">Branch ID: ${b.BranchID}</p></div>
+            <span class="badge b-green">Active</span>
+          </div>
+          <div class="card-body">
+            <div class="summary-item"><span class="s-lbl">📍 Address</span><span class="s-val">${b.BranchAddress}</span></div>
+            <div class="summary-item"><span class="s-lbl">📞 Phone</span><span class="s-val">${b.BranchPhone||'-'}</span></div>
+            <div class="summary-item"><span class="s-lbl">🏨 Hotel ID</span><span class="s-val">${b.HotelID}</span></div>
+          </div>
+        </div>`).join('');
+    } catch(e) { document.getElementById('branches-grid').innerHTML = '<div>Error loading branches</div>'; }
+  }
+
+  // ── Load all data on startup ─────────────────
+  loadDashboard();
+  loadReservations();
+  loadRooms();
+  loadCustomers();
+  loadPayments();
+  loadEmployees();
+  loadServices();
+  loadBranches();
+</script>
+</body>
+</html>
