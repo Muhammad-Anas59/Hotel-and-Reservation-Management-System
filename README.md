@@ -7,31 +7,31 @@ The project was built to demonstrate practical, end-to-end database and backend 
 ## Screenshots
 
 **Login**
-![Login](./screenshots/login.png)
+![Login](./screenshots/Login.png)
 
 **Dashboard**
-![Dashboard](./screenshots/dashboard.png)
+![Dashboard](./screenshots/Dashboard.png)
 
 **Reservations**
-![Reservations](./screenshots/reservations.png)
+![Reservations](./screenshots/Reservations.png)
 
 **Rooms**
-![Rooms](./screenshots/rooms.png)
+![Rooms](./screenshots/Rooms.png)
 
 **Customers**
-![Customers](./screenshots/customers.png)
+![Customers](./screenshots/Customers.png)
 
 **Payments**
-![Payments](./screenshots/payments.png)
+![Payments](./screenshots/Payments.png)
 
 **Employees**
-![Employees](./screenshots/employees.png)
+![Employees](./screenshots/Employees.png)
 
 **Services**
-![Services](./screenshots/services.png)
+![Services](./screenshots/Services.png)
 
 **Branches**
-![Branches](./screenshots/branches.png)
+![Branches](./screenshots/Branches.png)
 
 ## Features
 
