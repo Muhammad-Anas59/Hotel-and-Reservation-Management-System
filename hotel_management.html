@@ -7,16 +7,17 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500&family=Manrope:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+  <!-- ── Deployment config ──────────────────────────────
+       Change apiUrl to wherever your Flask backend is hosted.
+       Locally this stays 127.0.0.1:5000; in production, point it
+       at your deployed API's URL (e.g. https://api.yourdomain.com).
+  ------------------------------------------------------ -->
+  <script>
+    window.APP_CONFIG = { apiUrl: '' };
+</script>
   <style>
     *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
 
-    /* ── Design tokens ──────────────────────────
-       Subject: boutique multi-branch hotel back office (Pakistan).
-       Palette: warm charcoal-ink + brushed brass, on a pearl ground —
-       lobby marble & fixtures, not generic SaaS teal/indigo.
-       Display: Fraunces (serif, hospitality warmth). Body: Manrope.
-       Data/labels: IBM Plex Mono for numeric/id precision.
-    ------------------------------------------------ */
     :root {
       --ink:#181611; --ink2:#242019; --ink-line: rgba(255,255,255,0.08);
       --brass:#b3874a; --brass-light:#d8b579; --brass-dim:#8f6c3c;
@@ -36,11 +37,46 @@
       --mono:'IBM Plex Mono', monospace;
     }
     body { font-family:var(--sans); background:var(--pearl); color:var(--text); display:flex; min-height:100vh; font-size:14.5px; }
-
     ::selection { background:var(--brass-light); color:var(--ink); }
 
+    /* ── Login gate ── */
+    .login-gate {
+      position:fixed; inset:0; z-index:500; display:flex; align-items:center; justify-content:center; padding:20px;
+      background-color: #050403;
+      background-image:
+        radial-gradient(circle at 50% 42%, #6b4e28 0%, #3a2a16 30%, #1a140b 60%, #050403 100%);
+      overflow:hidden;
+    }
+    .login-gate::before {
+      content:''; position:absolute; inset:0; opacity:0.5; pointer-events:none;
+      background-image: repeating-linear-gradient(115deg, transparent 0px, transparent 68px, rgba(216,181,121,0.1) 69px, rgba(216,181,121,0.1) 70px);
+    }
+    .login-gate::after {
+      content:''; position:absolute; inset:0; pointer-events:none;
+      box-shadow: inset 0 0 260px rgba(0,0,0,0.85);
+    }
+    .login-gate.hidden { display:none; }
+    .login-card {
+      position:relative; z-index:1; width:400px; max-width:100%; background:var(--white); border-radius:3px;
+      border-top:3px solid var(--brass); box-shadow:0 40px 100px rgba(0,0,0,0.55), 0 0 0 1px rgba(179,135,74,0.15);
+      padding:44px 38px 38px; animation:loginRise 0.5s cubic-bezier(.2,.7,.3,1) both;
+    }
+    @keyframes loginRise { from{opacity:0; transform:translateY(16px);} to{opacity:1; transform:translateY(0);} }
+    .login-card .logo-icon { width:48px; height:48px; border:1px solid var(--brass); border-radius:2px; display:flex; align-items:center; justify-content:center; font-size:22px; margin:0 auto 20px; position:relative; }
+    .login-card .logo-icon::after { content:''; position:absolute; inset:-6px; border:1px solid rgba(179,135,74,0.3); border-radius:4px; }
+    .login-card h2 { font-family:var(--serif); font-size:24px; font-weight:600; text-align:center; color:var(--ink); letter-spacing:0.2px; }
+    .login-ornament { display:flex; align-items:center; justify-content:center; gap:8px; margin:10px 0 14px; }
+    .login-ornament::before, .login-ornament::after { content:''; height:1px; width:28px; background:var(--border); }
+    .login-ornament span { width:4px; height:4px; border-radius:50%; background:var(--brass); }
+    .login-card p.sub { font-size:12.5px; color:var(--text2); text-align:center; margin-top:0; margin-bottom:26px; letter-spacing:0.3px; }
+    .login-tagline { font-family:var(--mono); font-size:9.5px; color:var(--brass-dim); text-align:center; letter-spacing:2.2px; text-transform:uppercase; margin-top:6px; }
+    .login-card .form-group { margin-bottom:14px; }
+    .login-error { font-size:12.5px; color:var(--red); background:var(--red-bg); border-radius:2px; padding:9px 12px; margin-bottom:14px; display:none; }
+    .login-error.show { display:block; }
+    .login-card .btn { width:100%; justify-content:center; margin-top:6px; }
+
     /* ── Sidebar ── */
-    .sidebar { width:252px; height:100vh; background:var(--ink); position:fixed; top:0; left:0; display:flex; flex-direction:column; z-index:100; border-right:1px solid rgba(255,255,255,0.06); }
+    .sidebar { width:252px; height:100vh; background:var(--ink); position:fixed; top:0; left:0; display:flex; flex-direction:column; z-index:100; border-right:1px solid rgba(255,255,255,0.06); transition:transform 0.25s ease; }
     .logo-area { padding:30px 24px 22px; border-bottom:1px solid var(--ink-line); }
     .logo-icon { width:40px; height:40px; border:1px solid var(--brass); border-radius:2px; display:flex; align-items:center; justify-content:center; font-size:18px; margin-bottom:16px; color:var(--brass-light); position:relative; }
     .logo-icon::after { content:''; position:absolute; inset:-5px; border:1px solid rgba(179,135,74,0.35); border-radius:4px; }
@@ -49,10 +85,9 @@
     .nav-section { font-size:10px; font-weight:600; color:var(--text3); letter-spacing:1.8px; text-transform:uppercase; padding:22px 24px 8px; font-family:var(--mono); }
     .nav-links { padding:0 14px; }
     .sidebar-nav-scroll { overflow-y:auto; flex:1; scrollbar-width:thin; scrollbar-color: rgba(255,255,255,0.15) transparent; }
-    .sidebar-nav-scroll::-webkit-scrollbar { width:6px; }
-.sidebar-nav-scroll::-webkit-scrollbar-track { background:rgba(255,255,255,0.03); }
-.sidebar-nav-scroll::-webkit-scrollbar-thumb { background:rgba(216,181,121,0.35); border-radius:10px; }
-.sidebar-nav-scroll::-webkit-scrollbar-thumb:hover { background:rgba(216,181,121,0.55); }
+    .sidebar-nav-scroll::-webkit-scrollbar { width:5px; }
+    .sidebar-nav-scroll::-webkit-scrollbar-track { background:transparent; }
+    .sidebar-nav-scroll::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.16); border-radius:10px; }
     .nav-item { display:flex; align-items:center; gap:12px; padding:11px 12px; border-radius:2px; cursor:pointer; color:#a89f8f; font-size:13.5px; font-weight:500; margin-bottom:1px; transition:background 0.16s,color 0.16s,border-color 0.16s; user-select:none; border-left:2px solid transparent; }
     .nav-item:hover { background:rgba(255,255,255,0.04); color:var(--pearl); }
     .nav-item.active { background:rgba(179,135,74,0.12); color:var(--brass-light); border-left:2px solid var(--brass); font-weight:600; }
@@ -63,42 +98,50 @@
     .user-ava { width:34px; height:34px; border:1px solid var(--brass); border-radius:2px; display:flex; align-items:center; justify-content:center; color:var(--brass-light); font-weight:600; font-size:12.5px; flex-shrink:0; font-family:var(--mono); }
     .user-card h4 { font-size:13px; color:var(--pearl); font-weight:600; }
     .user-card p { font-size:11px; color:var(--text3); font-family:var(--mono); }
+    .logout-btn { margin-top:10px; padding:9px 10px; font-size:12px; font-weight:600; color:var(--text3); text-align:center; border:1px solid var(--ink-line); border-radius:2px; cursor:pointer; transition:color 0.15s, border-color 0.15s; }
+    .logout-btn:hover { color:var(--brass-light); border-color:var(--brass-dim); }
+
+    /* ── Mobile sidebar toggle ── */
+    .menu-toggle { display:none; width:38px; height:38px; border:1px solid var(--border); border-radius:50%; background:var(--white); align-items:center; justify-content:center; cursor:pointer; margin-right:14px; flex-shrink:0; }
+    .menu-toggle svg { width:18px; height:18px; color:var(--text2); }
+    .sidebar-overlay { display:none; position:fixed; inset:0; background:rgba(15,13,9,0.5); z-index:90; }
 
     /* ── Main / Topbar ── */
     .main { margin-left:252px; flex:1; display:flex; flex-direction:column; }
     .topbar { background:var(--white); border-bottom:1px solid var(--border); padding:17px 34px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:50; }
+    .topbar-left { display:flex; align-items:center; }
     .topbar-title { font-family:var(--serif); font-size:21px; font-weight:600; color:var(--ink); }
     .topbar-sub { font-size:12.5px; color:var(--text2); margin-top:2px; }
     .topbar-right { display:flex; align-items:center; gap:10px; }
     .topbar-actions { display:flex; align-items:center; gap:10px; }
-.icon-btn { width:40px; height:40px; border-radius:50%; background:var(--ink); border:1px solid var(--ink); display:flex; align-items:center; justify-content:center; cursor:pointer; transition:transform 0.15s, box-shadow 0.15s, background 0.15s; position:relative; box-shadow:0 2px 8px rgba(24,22,17,0.25); }
-.icon-btn:hover { background:#0f0d09; transform:translateY(-2px); box-shadow:0 6px 16px rgba(24,22,17,0.35); }
-.icon-btn:active { transform:translateY(0); }
-.icon-btn svg.topbar-icon { color:var(--brass-light); transition:transform 0.15s; }
-.icon-btn:hover svg.topbar-icon { transform:scale(1.1); }
-.notif-dot { width:8px; height:8px; background:#e0503f; border-radius:50%; position:absolute; top:6px; right:7px; border:2px solid var(--ink); }
-.search-box { display:flex; align-items:center; gap:10px; background:var(--white); border:1.5px solid var(--brass); border-radius:24px; padding:10px 16px; width:230px; transition:box-shadow 0.2s; box-shadow:0 1px 3px rgba(38,29,10,0.06); }
-.search-box:focus-within { box-shadow:0 0 0 4px rgba(179,135,74,0.18); }
-.search-box svg.topbar-icon { color:var(--brass); flex-shrink:0; }
-.search-box input { caret-color:var(--brass); }
-.topbar-icon { width:17px; height:17px; flex-shrink:0; }
+    .icon-btn { width:40px; height:40px; border-radius:50%; background:var(--ink); border:1px solid var(--ink); display:flex; align-items:center; justify-content:center; cursor:pointer; transition:transform 0.15s, box-shadow 0.15s, background 0.15s; position:relative; box-shadow:0 2px 8px rgba(24,22,17,0.25); }
+    .icon-btn:hover { background:#0f0d09; transform:translateY(-2px); box-shadow:0 6px 16px rgba(24,22,17,0.35); }
+    .icon-btn:active { transform:translateY(0); }
+    .icon-btn svg.topbar-icon { color:var(--brass-light); transition:transform 0.15s; }
+    .icon-btn:hover svg.topbar-icon { transform:scale(1.1); }
+    .notif-dot { width:8px; height:8px; background:#e0503f; border-radius:50%; position:absolute; top:6px; right:7px; border:2px solid var(--ink); }
+    .search-box { display:flex; align-items:center; gap:10px; background:var(--white); border:1.5px solid var(--brass); border-radius:24px; padding:10px 16px; width:230px; transition:box-shadow 0.2s; box-shadow:0 1px 3px rgba(38,29,10,0.06); }
+    .search-box:focus-within { box-shadow:0 0 0 4px rgba(179,135,74,0.18); }
     .search-box input { border:none; background:transparent; font-size:13px; color:var(--text); outline:none; width:100%; font-family:var(--sans); }
     .search-box input::placeholder { color:var(--text3); }
+    .search-box svg.topbar-icon { color:var(--brass); flex-shrink:0; }
+    .search-box input { caret-color:var(--brass); }
+    .topbar-icon { width:17px; height:17px; flex-shrink:0; }
     .content { padding:30px 34px 50px; flex:1; }
     .page { display:none; }
     .page.active { display:block; }
-.page.active > * { animation:riseIn 0.5s cubic-bezier(.2,.7,.3,1) both; }
-.page.active > *:nth-child(1){ animation-delay:.01s; }
-.page.active > *:nth-child(2){ animation-delay:.07s; }
-.page.active > *:nth-child(3){ animation-delay:.13s; }
-.page.active > *:nth-child(4){ animation-delay:.19s; }
-.page.active > *:nth-child(5){ animation-delay:.25s; }
-@keyframes riseIn { from{opacity:0; transform:translateY(10px);} to{opacity:1; transform:translateY(0);} }
-@media (prefers-reduced-motion: reduce) {
-  .page.active > * { animation:none; }
-  .room-tile, .card, .btn, .icon-btn { transition:none; }
-}
-    .page-head { display:flex; align-items:flex-end; justify-content:space-between; margin-bottom:26px; padding-bottom:18px; border-bottom:1px solid var(--border); }
+    .page.active > * { animation:riseIn 0.5s cubic-bezier(.2,.7,.3,1) both; }
+    .page.active > *:nth-child(1){ animation-delay:.01s; }
+    .page.active > *:nth-child(2){ animation-delay:.07s; }
+    .page.active > *:nth-child(3){ animation-delay:.13s; }
+    .page.active > *:nth-child(4){ animation-delay:.19s; }
+    .page.active > *:nth-child(5){ animation-delay:.25s; }
+    @keyframes riseIn { from{opacity:0; transform:translateY(10px);} to{opacity:1; transform:translateY(0);} }
+    @media (prefers-reduced-motion: reduce) {
+      .page.active > * { animation:none; }
+      .room-tile, .card, .btn, .icon-btn { transition:none; }
+    }
+    .page-head { display:flex; align-items:flex-end; justify-content:space-between; margin-bottom:26px; padding-bottom:18px; border-bottom:1px solid var(--border); gap:14px; flex-wrap:wrap; }
     .page-head h2 { font-family:var(--serif); font-size:26px; font-weight:600; color:var(--ink); }
     .page-head p { font-size:13px; color:var(--text2); margin-top:4px; }
 
@@ -108,8 +151,10 @@
     .stat-ico { width:30px; height:30px; display:flex; align-items:center; justify-content:center; font-size:15px; margin-bottom:20px; border:1px solid var(--border); border-radius:2px; }
     .stat-val { font-family:var(--serif); font-size:30px; font-weight:600; line-height:1; margin-bottom:6px; color:var(--ink); font-variant-numeric:tabular-nums; }
     .stat-lbl { font-size:12px; color:var(--text2); font-weight:600; text-transform:uppercase; letter-spacing:0.6px; }
-    .stat-trend { font-size:10.5px; font-weight:600; margin-top:11px; display:flex; align-items:center; gap:4px; font-family:var(--mono); text-transform:uppercase; letter-spacing:0.3px; }
-    .trend-up{color:var(--green);} .trend-down{color:var(--red);}
+    .stat-trend { font-size:10.5px; font-weight:600; margin-top:11px; display:flex; align-items:center; gap:6px; font-family:var(--mono); text-transform:uppercase; letter-spacing:0.5px; color:var(--text3); }
+    .live-dot { width:6px; height:6px; border-radius:50%; background:var(--green); flex-shrink:0; animation:livePulse 2s ease-in-out infinite; }
+    @keyframes livePulse { 0%,100%{ opacity:1; box-shadow:0 0 0 0 rgba(63,125,85,0.5); } 50%{ opacity:0.6; box-shadow:0 0 0 4px rgba(63,125,85,0); } }
+    @media (prefers-reduced-motion: reduce) { .live-dot { animation:none; } }
 
     /* ── Cards ── */
     .card { background:var(--white); border-radius:2px; border:1px solid var(--border); box-shadow:var(--shadow); overflow:hidden; margin-bottom:24px; }
@@ -147,8 +192,8 @@
     .btn-teal:hover { background:var(--brass-dim); }
     .btn-outline { background:transparent; color:var(--text2); border:1px solid var(--border); text-transform:none; letter-spacing:0; font-weight:600; }
     .btn-outline:hover { border-color:var(--brass); color:var(--ink); background:var(--pearl); }
-.btn-sm { padding:6px 12px; font-size:11px; }
-.btn:focus-visible, .icon-btn:focus-visible, .nav-item:focus-visible, .room-tile:focus-visible { outline:2px solid var(--brass); outline-offset:2px; }
+    .btn-sm { padding:6px 12px; font-size:11px; }
+    .btn:focus-visible, .icon-btn:focus-visible, .nav-item:focus-visible, .room-tile:focus-visible { outline:2px solid var(--brass); outline-offset:2px; }
 
     /* ── Filters ── */
     .filter-bar { display:flex; align-items:center; gap:10px; margin-bottom:18px; flex-wrap:wrap; }
@@ -179,6 +224,19 @@
     .form-label { font-size:10.5px; font-weight:700; color:var(--text2); text-transform:uppercase; letter-spacing:0.7px; font-family:var(--mono); }
     .form-input,.form-select,.form-textarea { padding:10px 13px; border:1px solid var(--border); border-radius:2px; font-size:13px; font-family:var(--sans); color:var(--text); background:var(--white); outline:none; transition:border-color 0.16s,box-shadow 0.16s; }
     .form-input:focus,.form-select:focus,.form-textarea:focus { border-color:var(--brass); box-shadow:0 0 0 3px rgba(179,135,74,0.14); }
+
+    /* ── Settings panel ── */
+    .settings-section-title { font-family:var(--mono); font-size:10.5px; font-weight:700; letter-spacing:0.8px; text-transform:uppercase; color:var(--text2); margin:20px 0 10px; }
+    .toggle-row { display:flex; align-items:center; justify-content:space-between; padding:12px 0; border-bottom:1px solid var(--border-soft); gap:16px; }
+    .toggle-row:last-child { border-bottom:none; }
+    .toggle-row .t-label { font-size:13px; font-weight:600; color:var(--ink); }
+    .toggle-row .t-sub { font-size:11.5px; color:var(--text2); margin-top:2px; }
+    .switch { position:relative; width:42px; height:24px; flex-shrink:0; }
+    .switch input { opacity:0; width:0; height:0; }
+    .switch-slider { position:absolute; inset:0; background:var(--border); border-radius:24px; cursor:pointer; transition:background 0.2s; }
+    .switch-slider::before { content:''; position:absolute; width:18px; height:18px; left:3px; top:3px; background:var(--white); border-radius:50%; transition:transform 0.2s; box-shadow:0 1px 3px rgba(0,0,0,0.2); }
+    .switch input:checked + .switch-slider { background:var(--brass); }
+    .switch input:checked + .switch-slider::before { transform:translateX(18px); }
 
     /* ── Bars / Activity ── */
     .bar-chart { display:flex; flex-direction:column; gap:12px; }
@@ -213,31 +271,64 @@
     .summary-item:last-child { border-bottom:none; }
     .summary-item .s-lbl { color:var(--text2); }
     .summary-item .s-val { font-weight:700; color:var(--ink); font-family:var(--mono); }
-    /* ── Branch cards ── */
-.branch-card { background:var(--white); border:1px solid var(--border); border-top:3px solid var(--brass); border-radius:2px; overflow:hidden; transition:transform 0.18s ease, box-shadow 0.18s ease; }
-.branch-card:hover { transform:translateY(-3px); box-shadow:var(--shadow-lg); }
-.branch-card-head { padding:20px 22px 16px; display:flex; align-items:flex-start; justify-content:space-between; gap:10px; border-bottom:1px solid var(--border-soft); }
-.branch-card-head h3 { font-family:var(--serif); font-size:17px; font-weight:600; color:var(--ink); }
-.branch-tag { font-family:var(--mono); font-size:10px; color:var(--brass-dim); letter-spacing:0.6px; margin-top:5px; text-transform:uppercase; }
-.branch-card-body { padding:18px 22px 20px; }
     .loading { text-align:center; padding:32px; color:var(--text3); font-size:13px; font-family:var(--mono); }
-    /* ── Settings panel ── */
-.settings-section-title { font-family:var(--mono); font-size:10.5px; font-weight:700; letter-spacing:0.8px; text-transform:uppercase; color:var(--text2); margin:20px 0 10px; }
-.toggle-row { display:flex; align-items:center; justify-content:space-between; padding:12px 0; border-bottom:1px solid var(--border-soft); gap:16px; }
-.toggle-row:last-child { border-bottom:none; }
-.toggle-row .t-label { font-size:13px; font-weight:600; color:var(--ink); }
-.toggle-row .t-sub { font-size:11.5px; color:var(--text2); margin-top:2px; }
-.switch { position:relative; width:42px; height:24px; flex-shrink:0; }
-.switch input { opacity:0; width:0; height:0; }
-.switch-slider { position:absolute; inset:0; background:var(--border); border-radius:24px; cursor:pointer; transition:background 0.2s; }
-.switch-slider::before { content:''; position:absolute; width:18px; height:18px; left:3px; top:3px; background:var(--white); border-radius:50%; transition:transform 0.2s; box-shadow:0 1px 3px rgba(0,0,0,0.2); }
-.switch input:checked + .switch-slider { background:var(--brass); }
-.switch input:checked + .switch-slider::before { transform:translateX(18px); }
+
+    /* ── Branch cards ── */
+    .branch-card { background:var(--white); border:1px solid var(--border); border-top:3px solid var(--brass); border-radius:2px; overflow:hidden; transition:transform 0.18s ease, box-shadow 0.18s ease; }
+    .branch-card:hover { transform:translateY(-3px); box-shadow:var(--shadow-lg); }
+    .branch-card-head { padding:20px 22px 16px; display:flex; align-items:flex-start; justify-content:space-between; gap:10px; border-bottom:1px solid var(--border-soft); }
+    .branch-card-head h3 { font-family:var(--serif); font-size:17px; font-weight:600; color:var(--ink); }
+    .branch-tag { font-family:var(--mono); font-size:10px; color:var(--brass-dim); letter-spacing:0.6px; margin-top:5px; text-transform:uppercase; }
+    .branch-card-body { padding:18px 22px 20px; }
+
+    /* ── Responsive ── */
+    @media (max-width:960px) {
+      .menu-toggle { display:flex; }
+      .sidebar { transform:translateX(-100%); box-shadow:0 0 40px rgba(0,0,0,0.35); }
+      .sidebar.open { transform:translateX(0); }
+      .sidebar-overlay.show { display:block; }
+      .main { margin-left:0; }
+      .stats-row { grid-template-columns:repeat(2,1fr); }
+      .grid-2, .grid-3 { grid-template-columns:1fr; }
+      .form-grid { grid-template-columns:1fr; }
+      .search-box { width:170px; }
+    }
+    @media (max-width:600px) {
+      .content { padding:18px; }
+      .topbar { padding:14px 18px; flex-wrap:wrap; gap:10px; }
+      .topbar-right { width:100%; justify-content:space-between; }
+      .search-box { flex:1; width:auto; }
+      .stats-row { grid-template-columns:1fr; }
+      .page-head h2 { font-size:22px; }
+    }
   </style>
 </head>
 <body>
 
-<aside class="sidebar">
+<!-- LOGIN GATE -->
+<div class="login-gate" id="login-gate">
+  <div class="login-card">
+    <div class="logo-icon">🏨</div>
+    <p class="login-tagline">Est. 2024 · Lahore & Islamabad</p>
+    <h2>Pearl Hotels</h2>
+    <div class="login-ornament"><span></span></div>
+    <p class="sub">Sign in to the management system</p>
+    <div class="login-error" id="login-error">Invalid username or password.</div>
+    <div class="form-group">
+      <label class="form-label">Username</label>
+      <input id="login-username" type="text" class="form-input" placeholder="admin" autocomplete="username">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Password</label>
+      <input id="login-password" type="password" class="form-input" placeholder="••••••••" autocomplete="current-password">
+    </div>
+    <button class="btn btn-navy" onclick="attemptLogin()">Sign In</button>
+  </div>
+</div>
+
+<div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+<aside class="sidebar" id="sidebar">
   <div class="logo-area">
     <div class="logo-icon">🏨</div>
     <h1>Pearl Hotels</h1>
@@ -264,32 +355,38 @@
   </div>
   <div class="sidebar-footer">
     <div class="user-card">
-      <div class="user-ava">AD</div>
-<div><h4>Admin</h4><p>Administrator</p></div>
+      <div class="user-ava" id="sidebar-ava">AD</div>
+      <div><h4 id="sidebar-name">Admin</h4><p id="sidebar-role">Administrator</p></div>
     </div>
+    <div class="logout-btn" onclick="logout()">Log Out</div>
   </div>
 </aside>
 
 <div class="main">
   <div class="topbar">
-    <div>
-      <div class="topbar-title" id="topbar-title">Dashboard</div>
-      <div class="topbar-sub" id="topbar-sub">Welcome back, Admin — Here's what's happening today</div>
+    <div class="topbar-left">
+      <div class="menu-toggle" onclick="toggleSidebar()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+      </div>
+      <div>
+        <div class="topbar-title" id="topbar-title">Dashboard</div>
+        <div class="topbar-sub" id="topbar-sub">Welcome back, Admin — Here's what's happening today</div>
+      </div>
     </div>
     <div class="topbar-right">
       <div class="search-box">
-  <svg class="topbar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-  <input type="text" id="global-search" placeholder="Search anything..." oninput="handleSearch(this.value)">
-</div>
-<div class="topbar-actions">
-  <div class="icon-btn" onclick="showToast('No new notifications', '')">
-    <svg class="topbar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
-    <span class="notif-dot"></span>
-  </div>
-  <div class="icon-btn" onclick="openSettings()">
-    <svg class="topbar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
-  </div>
-</div>
+        <svg class="topbar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+        <input type="text" id="global-search" placeholder="Search anything..." oninput="handleSearch(this.value)">
+      </div>
+      <div class="topbar-actions">
+        <div class="icon-btn" onclick="showToast('No new notifications', '')">
+          <svg class="topbar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+          <span class="notif-dot" id="notif-dot"></span>
+        </div>
+        <div class="icon-btn" onclick="openSettings()">
+          <svg class="topbar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -302,7 +399,7 @@
           <div class="stat-ico ico-blue">📅</div>
           <div class="stat-val" id="stat-reservations">...</div>
           <div class="stat-lbl">Total Reservations</div>
-          <div class="stat-trend trend-up">↑ Live from database</div>
+          <div class="stat-trend"><span class="live-dot"></span> Live from database</div>
         </div>
         <div class="stat-card">
           <div class="stat-ico ico-teal">🛏️</div>
@@ -447,7 +544,10 @@
     <div class="page" id="page-services">
       <div class="page-head">
         <div><h2>Services</h2><p>Additional hotel services</p></div>
-        <button class="btn btn-navy" onclick="openModal('modal-add-svc')">＋ New Service</button>
+        <div style="display:flex;gap:10px;">
+          <button class="btn btn-outline" onclick="openBookServiceModal()">＋ Book Service</button>
+          <button class="btn btn-navy" onclick="openModal('modal-add-svc')">＋ New Service</button>
+        </div>
       </div>
       <div class="card">
         <div class="card-head"><div><h3>Available Services</h3><p id="services-count">Loading...</p></div></div>
@@ -455,6 +555,15 @@
           <table>
             <thead><tr><th>ID</th><th>Service Name</th><th>Price</th><th>Status</th><th>Actions</th></tr></thead>
             <tbody id="services-tbody"><tr><td colspan="5" class="loading">Loading from database...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head"><div><h3>Service Bookings</h3><p id="svc-bookings-count">Loading...</p></div></div>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>Booking ID</th><th>Guest</th><th>Reservation</th><th>Service</th><th>Qty</th><th>Date</th><th>Total</th><th>Actions</th></tr></thead>
+            <tbody id="svc-bookings-tbody"><tr><td colspan="8" class="loading">Loading from database...</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -628,6 +737,24 @@
   </div>
 </div>
 
+<!-- SETTINGS MODAL -->
+ <div class="overlay" id="modal-book-svc">
+  <div class="modal">
+    <div class="modal-head"><h3>🛎️ Book a Service</h3><button class="modal-close" onclick="closeModal('modal-book-svc')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group full"><label class="form-label">Reservation</label><select id="svcbook-reservation" class="form-select"><option value="">Loading reservations...</option></select></div>
+        <div class="form-group full"><label class="form-label">Service</label><select id="svcbook-service" class="form-select"><option value="">Loading services...</option></select></div>
+        <div class="form-group"><label class="form-label">Quantity</label><input id="svcbook-qty" type="number" class="form-input" value="1" min="1"></div>
+        <div class="form-group"><label class="form-label">Service Date</label><input id="svcbook-date" type="date" class="form-input"></div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-outline" onclick="closeModal('modal-book-svc')">Cancel</button>
+      <button class="btn btn-navy" onclick="saveServiceBooking()">Save Booking</button>
+    </div>
+  </div>
+</div>
 <div class="overlay" id="modal-settings">
   <div class="modal">
     <div class="modal-head"><h3>⚙️ Settings</h3><button class="modal-close" onclick="closeModal('modal-settings')">✕</button></div>
@@ -653,16 +780,26 @@
     </div>
   </div>
 </div>
+
 <div id="toast">✓ <span id="toast-msg">Done</span></div>
 
 <script>
-  const API = 'http://127.0.0.1:5000';
-  const API_KEY = 'd9c6c0f893912ea1006242ec5293b00a9be58312db515209'; // must match API_KEY in your .env
+  const API = window.APP_CONFIG.apiUrl;
+  let API_KEY = sessionStorage.getItem('pearlApiKey') || null;
 
-  function apiFetch(url, options = {}) {
+  async function apiFetch(url, options = {}) {
     options.headers = { ...(options.headers || {}), 'X-API-Key': API_KEY };
-    return fetch(url, options);
-  }
+    const res = await fetch(url, options);
+    if (res.status === 401) {
+      sessionStorage.removeItem('pearlApiKey');
+      API_KEY = null;
+      showLoginGate();
+      const err = document.getElementById('login-error');
+      err.textContent = 'Your session expired. Please log in again.';
+      err.classList.add('show');
+    }
+    return res;
+}
 
   let branchesCache = [];
   let roomTypesCache = {};
@@ -671,6 +808,81 @@
   let employeesCache = [];
   let servicesCache = [];
   let hotelsCache = [];
+  let reservationsCache = [];
+
+  // ── Login ─────────────────────────────────────
+  async function attemptLogin() {
+    const username = document.getElementById('login-username').value.trim();
+    const password = document.getElementById('login-password').value;
+    const errBox = document.getElementById('login-error');
+    errBox.classList.remove('show');
+    if (!username || !password) {
+      errBox.textContent = 'Please enter both username and password.';
+      errBox.classList.add('show');
+      return;
+    }
+    try {
+      const res = await fetch(`${API}/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      });
+      if (res.status === 429) {
+        errBox.textContent = 'Too many attempts. Please wait a minute and try again.';
+        errBox.classList.add('show');
+        return;
+      }
+      const result = await res.json();
+      if (!res.ok) {
+        errBox.textContent = result.error || 'Invalid username or password.';
+        errBox.classList.add('show');
+        return;
+      }
+      API_KEY = result.apiKey;
+      sessionStorage.setItem('pearlApiKey', API_KEY);
+      hideLoginGate();
+      initApp();
+    } catch (e) {
+      errBox.textContent = 'Could not reach the server. Is the Flask API running?';
+      errBox.classList.add('show');
+    }
+  }
+
+  document.getElementById('login-password').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') attemptLogin();
+  });
+
+  function logout() {
+    sessionStorage.removeItem('pearlApiKey');
+    API_KEY = null;
+    showLoginGate();
+    document.getElementById('login-username').value = '';
+    document.getElementById('login-password').value = '';
+    document.getElementById('login-error').classList.remove('show');
+  }
+
+  // ── Mobile sidebar ────────────────────────────
+  function toggleSidebar() {
+    document.getElementById('sidebar').classList.toggle('open');
+    document.getElementById('sidebar-overlay').classList.toggle('show');
+  }
+
+  function showLoginGate() {
+    document.getElementById('login-gate').classList.remove('hidden');
+    document.querySelector('.sidebar').style.visibility = 'hidden';
+    document.querySelector('.main').style.visibility = 'hidden';
+  }
+  function hideLoginGate() {
+    document.getElementById('login-gate').classList.add('hidden');
+    document.querySelector('.sidebar').style.visibility = 'visible';
+    document.querySelector('.main').style.visibility = 'visible';
+  }
+  function closeSidebarIfMobile() {
+    if (window.innerWidth <= 960) {
+      document.getElementById('sidebar').classList.remove('open');
+      document.getElementById('sidebar-overlay').classList.remove('show');
+    }
+  }
 
   // ── Navigation ──────────────────────────────
   function showPage(name, el) {
@@ -678,8 +890,10 @@
     document.getElementById('page-' + name).classList.add('active');
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
     el.classList.add('active');
+    closeSidebarIfMobile();
+    const s = getSettings();
     const titles = {
-      dashboard:    ['Dashboard',    `Welcome back, ${getSettings().name} — Here's what's happening today`],
+      dashboard:    ['Dashboard',    `Welcome back, ${s.name} — Here's what's happening today`],
       reservations: ['Reservations', 'Manage all hotel room bookings'],
       rooms:        ['Rooms',        'Room availability across all branches'],
       customers:    ['Customers',    'All registered guests'],
@@ -701,8 +915,9 @@
     'modal-add-svc': ['svc-name','svc-price'],
     'modal-add-branch': ['branch-name','branch-address','branch-phone','branch-hotelid']
   };
-  // Note: modal-edit-emp is intentionally NOT in this list — openEditEmployee() fills it
-  // with existing data, and openModal()'s auto-clear would wipe that out otherwise.
+  // Note: modal-edit-emp and modal-settings are intentionally NOT in this list —
+  // their open functions fill them with existing data, and openModal()'s
+  // auto-clear would wipe that out otherwise.
 
   function openModal(id) {
     const fields = modalFormFields[id];
@@ -736,6 +951,8 @@
     return ((first||'')[0]||('')).toUpperCase() + ((last||'')[0]||('')).toUpperCase();
   }
 
+  function pad3(id) { return String(id).padStart(3,'0'); }
+
   function handleSearch(query) {
     const activePage = document.querySelector('.page.active');
     if (!activePage) return;
@@ -745,6 +962,50 @@
       const text = row.textContent.toLowerCase();
       row.style.display = text.includes(q) ? '' : 'none';
     });
+  }
+
+  // ── Settings ──────────────────────────────────
+  function getSettings() {
+    try {
+      const raw = localStorage.getItem('pearlSettings');
+      if (raw) return JSON.parse(raw);
+    } catch(e) {}
+    return { name:'Admin', role:'Administrator', email:'', notifications:true };
+  }
+
+  function applySettings() {
+    const s = getSettings();
+    const nameParts = s.name.trim().split(' ');
+    document.getElementById('sidebar-name').textContent = s.name;
+    document.getElementById('sidebar-role').textContent = s.role;
+    document.getElementById('sidebar-ava').textContent = initials(nameParts[0], nameParts[1]||'');
+    if (document.getElementById('topbar-title').textContent === 'Dashboard') {
+      document.getElementById('topbar-sub').textContent = `Welcome back, ${s.name} — Here's what's happening today`;
+    }
+    const dot = document.getElementById('notif-dot');
+    if (dot) dot.style.display = s.notifications ? '' : 'none';
+  }
+
+  function openSettings() {
+    const s = getSettings();
+    document.getElementById('set-admin-name').value = s.name;
+    document.getElementById('set-admin-role').value = s.role;
+    document.getElementById('set-admin-email').value = s.email || '';
+    document.getElementById('set-notif-enabled').checked = s.notifications;
+    openModal('modal-settings');
+  }
+
+  function saveSettings() {
+    const s = {
+      name: document.getElementById('set-admin-name').value.trim() || 'Admin',
+      role: document.getElementById('set-admin-role').value.trim() || 'Administrator',
+      email: document.getElementById('set-admin-email').value.trim(),
+      notifications: document.getElementById('set-notif-enabled').checked
+    };
+    localStorage.setItem('pearlSettings', JSON.stringify(s));
+    applySettings();
+    closeModal('modal-settings');
+    showToast('Settings saved ✓', 's-green');
   }
 
   // ── Fetch & Render ───────────────────────────
@@ -820,11 +1081,12 @@
   async function loadReservations() {
     try {
       const data = await apiFetch(`${API}/reservations`).then(r=>r.json());
+      reservationsCache = data;
       document.getElementById('res-count').textContent = `${data.length} total reservations`;
       document.getElementById('reservations-tbody').innerHTML = data.map(r=>`
         <tr>
-          <td><strong>#RES-00${r.ReservationID}</strong></td>
-          <td>C-00${r.CustomerID}</td>
+          <td><strong>#RES-${pad3(r.ReservationID)}</strong></td>
+          <td>C-${pad3(r.CustomerID)}</td>
           <td>Room ${r.RoomID}</td>
           <td>${r.CheckInDate}</td>
           <td>${r.CheckOutDate}</td>
@@ -1083,7 +1345,7 @@
       const res = await apiFetch(`${API}/services/${id}`, { method: 'DELETE' });
       const result = await res.json();
       if (!res.ok) throw new Error(result.error || 'Failed');
-      showToast('Service deleted ✓', 's-green');
+      showToast(result.message || 'Service deleted ✓', 's-green');
       loadServices();
     } catch (e) {
       showToast(`Could not delete service: ${e.message}`, 's-red');
@@ -1162,7 +1424,7 @@
       document.getElementById('customers-count').textContent = `${data.length} registered customers`;
       document.getElementById('customers-tbody').innerHTML = data.map(c=>`
         <tr>
-          <td>C-00${c.CustomerID}</td>
+          <td>C-${pad3(c.CustomerID)}</td>
           <td><div class="ava-cell"><div class="ava">${initials(c.FirstName,c.LastName)}</div><div><div class="nm">${c.FirstName} ${c.LastName}</div></div></div></td>
           <td>${c.CNIC_Passport}</td>
           <td>${c.Phone}</td>
@@ -1182,8 +1444,8 @@
       document.getElementById('pay-total').textContent   = data.length;
       document.getElementById('payments-tbody').innerHTML = data.map(p=>`
         <tr>
-          <td><strong>PAY-00${p.PaymentID}</strong></td>
-          <td>#RES-00${p.ReservationID}</td>
+          <td><strong>PAY-${pad3(p.PaymentID)}</strong></td>
+          <td>#RES-${pad3(p.ReservationID)}</td>
           <td><strong>Rs ${Number(p.Amount).toLocaleString()}</strong></td>
           <td>${p.PaymentDate}</td>
           <td>${p.PaymentMethod}</td>
@@ -1200,7 +1462,7 @@
       employeesCache = data;
       document.getElementById('employees-tbody').innerHTML = data.map(e=>`
         <tr>
-          <td>E-00${e.EmployeeID}</td>
+          <td>E-${pad3(e.EmployeeID)}</td>
           <td><div class="ava-cell"><div class="ava">${initials(e.FirstName,e.LastName)}</div><div><div class="nm">${e.FirstName} ${e.LastName}</div></div></div></td>
           <td>${e.BranchID}</td>
           <td><span class="badge ${e.Position==='Manager'?'b-purple':e.Position==='Accountant'?'b-teal':'b-blue'}">${e.Position}</span></td>
@@ -1221,7 +1483,7 @@
       servicesCache = data;
       document.getElementById('services-tbody').innerHTML = data.map(s=>`
         <tr>
-          <td>S-00${s.ServiceID}</td>
+          <td>S-${pad3(s.ServiceID)}</td>
           <td>${s.ServiceName}</td>
           <td><strong>Rs ${Number(s.ServicePrice).toLocaleString()}</strong></td>
           <td>${s.IsActive ? '<span class="badge b-green">Active</span>' : '<span class="badge b-gray">Inactive</span>'}</td>
@@ -1231,6 +1493,86 @@
           </td>
         </tr>`).join('');
     } catch(e) { document.getElementById('services-tbody').innerHTML = '<tr><td colspan="4">Error loading data</td></tr>'; }
+  }
+
+  function openBookServiceModal() {
+    const resSelect = document.getElementById('svcbook-reservation');
+    resSelect.innerHTML = '<option value="">Select reservation...</option>' +
+      reservationsCache.map(r => {
+        const cust = customersCache.find(c => c.CustomerID === r.CustomerID);
+        const custName = cust ? `${cust.FirstName} ${cust.LastName}` : `Customer ${r.CustomerID}`;
+        return `<option value="${r.ReservationID}">#RES-${pad3(r.ReservationID)} — ${custName} (Room ${r.RoomID})</option>`;
+      }).join('');
+
+    const svcSelect = document.getElementById('svcbook-service');
+    const activeServices = servicesCache.filter(s => s.IsActive);
+    svcSelect.innerHTML = '<option value="">Select service...</option>' +
+      activeServices.map(s => `<option value="${s.ServiceID}">${s.ServiceName} — Rs ${Number(s.ServicePrice).toLocaleString()}</option>`).join('');
+
+    document.getElementById('svcbook-qty').value = 1;
+    document.getElementById('svcbook-date').value = '';
+    openModal('modal-book-svc');
+  }
+
+  async function saveServiceBooking() {
+    const payload = {
+      ReservationID: Number(document.getElementById('svcbook-reservation').value),
+      ServiceID: Number(document.getElementById('svcbook-service').value),
+      Quantity: Number(document.getElementById('svcbook-qty').value) || 1,
+      ServiceDate: document.getElementById('svcbook-date').value
+    };
+    if (!payload.ReservationID || !payload.ServiceID || !payload.ServiceDate) {
+      showToast('Please fill in all fields ✗', 's-red');
+      return;
+    }
+    try {
+      const res = await apiFetch(`${API}/service-bookings`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || 'Failed');
+      closeModal('modal-book-svc');
+      showToast('Service booked successfully ✓', 's-green');
+      loadServiceBookings();
+    } catch (e) {
+      showToast(`Could not book service: ${e.message}`, 's-red');
+    }
+  }
+
+  async function loadServiceBookings() {
+    try {
+      const data = await apiFetch(`${API}/service-bookings`).then(r=>r.json());
+      document.getElementById('svc-bookings-count').textContent = `${data.length} service bookings`;
+      document.getElementById('svc-bookings-tbody').innerHTML = data.map(b=>`
+        <tr>
+          <td>SB-${pad3(b.ServiceBookingID)}</td>
+          <td>${b.FirstName} ${b.LastName}</td>
+          <td>#RES-${pad3(b.ReservationID)}</td>
+          <td>${b.ServiceName}</td>
+          <td>${b.Quantity}</td>
+          <td>${b.ServiceDate}</td>
+          <td><strong>Rs ${(Number(b.ServicePrice) * Number(b.Quantity)).toLocaleString()}</strong></td>
+          <td><button class="btn btn-outline btn-sm" onclick="deleteServiceBooking(${b.ServiceBookingID})">Delete</button></td>
+        </tr>`).join('') || '';
+      if (data.length === 0) {
+        document.getElementById('svc-bookings-tbody').innerHTML = '<tr><td colspan="8" class="loading">No service bookings yet</td></tr>';
+      }
+    } catch(e) { document.getElementById('svc-bookings-tbody').innerHTML = '<tr><td colspan="8">Error loading data</td></tr>'; }
+  }
+
+  async function deleteServiceBooking(id) {
+    if (!confirm('Delete this service booking?')) return;
+    try {
+      const res = await apiFetch(`${API}/service-bookings/${id}`, { method: 'DELETE' });
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || 'Failed');
+      showToast('Service booking deleted ✓', 's-green');
+      loadServiceBookings();
+    } catch (e) {
+      showToast(`Could not delete booking: ${e.message}`, 's-red');
+    }
   }
 
   async function loadBranches() {
@@ -1243,7 +1585,7 @@
           <div class="branch-card-head">
             <div>
               <h3>${b.BranchName}</h3>
-              <p class="branch-tag">Branch ${String(b.BranchID).padStart(3,'0')} · Hotel ${b.HotelID}</p>
+              <p class="branch-tag">Branch ${pad3(b.BranchID)} · Hotel ${b.HotelID}</p>
             </div>
             <span class="badge b-green">Active</span>
           </div>
@@ -1377,61 +1719,29 @@
     } catch(e) { /* falls back to showing raw ID if this fails */ }
   }
 
-  // ── Settings ──────────────────────────────────
-  function getSettings() {
-    try {
-      const raw = localStorage.getItem('pearlSettings');
-      if (raw) return JSON.parse(raw);
-    } catch(e) {}
-    return { name:'Admin', role:'Administrator', email:'', notifications:true };
-  }
-
-  function applySettings() {
-    const s = getSettings();
-    const nameParts = s.name.trim().split(' ');
-    document.querySelector('.user-card h4').textContent = s.name;
-    document.querySelector('.user-card p').textContent = s.role;
-    document.querySelector('.user-ava').textContent = initials(nameParts[0], nameParts[1]||'');
-    if (document.getElementById('topbar-title').textContent === 'Dashboard') {
-      document.getElementById('topbar-sub').textContent = `Welcome back, ${s.name} — Here's what's happening today`;
-    }
-    const dot = document.querySelector('.icon-btn .notif-dot');
-    if (dot) dot.style.display = s.notifications ? '' : 'none';
-  }
-
-  function openSettings() {
-    const s = getSettings();
-    document.getElementById('set-admin-name').value = s.name;
-    document.getElementById('set-admin-role').value = s.role;
-    document.getElementById('set-admin-email').value = s.email || '';
-    document.getElementById('set-notif-enabled').checked = s.notifications;
-    openModal('modal-settings');
-  }
-
-  function saveSettings() {
-    const s = {
-      name: document.getElementById('set-admin-name').value.trim() || 'Admin',
-      role: document.getElementById('set-admin-role').value.trim() || 'Administrator',
-      email: document.getElementById('set-admin-email').value.trim(),
-      notifications: document.getElementById('set-notif-enabled').checked
-    };
-    localStorage.setItem('pearlSettings', JSON.stringify(s));
+  // ── App bootstrap ─────────────────────────────
+  function initApp() {
     applySettings();
-    closeModal('modal-settings');
-    showToast('Settings saved ✓', 's-green');
+    loadDashboard();
+    loadReservations();
+    loadRooms();
+    loadCustomers();
+    loadPayments();
+    loadEmployees();
+    loadServices();
+    loadBranches();
+    loadHotels();
+    loadServiceBookings();
   }
 
-  // ── Load all data on startup ─────────────────
-  applySettings();
-  loadDashboard();
-  loadReservations();
-  loadRooms();
-  loadCustomers();
-  loadPayments();
-  loadEmployees();
-  loadServices();
-  loadBranches();
-  loadHotels();
+  // On page load: skip the login screen if we already have a saved key.
+  if (API_KEY) {
+    hideLoginGate();
+    initApp();
+  } else {
+    showLoginGate();
+    document.getElementById('login-username').focus();
+  }
 </script>
 </body>
 </html>

@@ -1,7 +1,10 @@
 import os
+import bcrypt
 from functools import wraps
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 import mysql.connector
 from dotenv import load_dotenv
 
@@ -13,7 +16,15 @@ app = Flask(__name__)
 ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000").split(",")
 CORS(app, origins=ALLOWED_ORIGINS)
 
+
+@app.route('/')
+def index():
+    return send_from_directory(os.path.dirname(os.path.abspath(__file__)), 'hotel_management.html')
 API_KEY = os.getenv("API_KEY")
+ADMIN_USERNAME = os.getenv("ADMIN_USERNAME", "admin")
+ADMIN_PASSWORD_HASH = os.getenv("ADMIN_PASSWORD_HASH", "")
+
+limiter = Limiter(get_remote_address, app=app, default_limits=[])
 
 def require_api_key(f):
     @wraps(f)
@@ -48,6 +59,36 @@ def require_fields(data, fields):
     if missing:
         return jsonify({"error": f"Missing required field(s): {', '.join(missing)}"}), 400
     return None
+
+
+@app.route('/login', methods=['POST'])
+@limiter.limit("5 per minute")
+def login():
+    """Public route (no @require_api_key) — checks the admin username/password
+    from .env and, if correct, hands back the API key the frontend needs for
+    every other request. Password is compared against a bcrypt hash, never in
+    plain text, and this route is rate-limited to 5 attempts per minute per IP."""
+    data, err = get_json_body()
+    if err:
+        return err
+    error = require_fields(data, ['username', 'password'])
+    if error:
+        return error
+
+    if not ADMIN_PASSWORD_HASH:
+        return jsonify({"error": "Server misconfigured: ADMIN_PASSWORD_HASH is not set"}), 500
+
+    password_matches = bcrypt.checkpw(
+        data['password'].encode('utf-8'),
+        ADMIN_PASSWORD_HASH.encode('utf-8')
+    )
+
+    if data['username'] == ADMIN_USERNAME and password_matches:
+        if not API_KEY:
+            return jsonify({"error": "Server misconfigured: API_KEY is not set"}), 500
+        return jsonify({"apiKey": API_KEY}), 200
+
+    return jsonify({"error": "Invalid username or password"}), 401
 
 
 @app.route('/customers', methods=['GET', 'POST'])
@@ -364,6 +405,67 @@ def update_or_delete_service(service_id):
                 cursor.execute("UPDATE SERVICE SET IsActive=0 WHERE ServiceID=%s", (service_id,))
                 db.commit()
                 return jsonify({"message": "Service is used in existing bookings, so it was deactivated instead of deleted"})
+    except mysql.connector.Error as e:
+        db.rollback()
+        return jsonify({"error": str(e)}), 400
+    finally:
+        db.close()
+@app.route('/service-bookings', methods=['GET', 'POST'])
+@require_api_key
+def service_bookings():
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+    try:
+        if request.method == 'POST':
+            data, err = get_json_body()
+            if err:
+                return err
+            error = require_fields(data, ['ReservationID', 'ServiceID', 'ServiceDate'])
+            if error:
+                return error
+
+            cursor.execute("SELECT IsActive FROM SERVICE WHERE ServiceID=%s", (data['ServiceID'],))
+            svc = cursor.fetchone()
+            if not svc:
+                return jsonify({"error": "Service not found"}), 404
+            if not svc['IsActive']:
+                return jsonify({"error": "This service is no longer available to book"}), 400
+
+            cursor.execute(
+                """INSERT INTO service_booking (ReservationID, ServiceID, Quantity, ServiceDate)
+                   VALUES (%s, %s, %s, %s)""",
+                (data['ReservationID'], data['ServiceID'], data.get('Quantity', 1), data['ServiceDate'])
+            )
+            db.commit()
+            new_id = cursor.lastrowid
+            return jsonify({"message": "Service booking created", "ServiceBookingID": new_id}), 201
+        else:
+            cursor.execute("""
+                SELECT sb.ServiceBookingID, sb.ReservationID, sb.ServiceID, sb.Quantity, sb.ServiceDate,
+                       s.ServiceName, s.ServicePrice,
+                       c.FirstName, c.LastName
+                FROM service_booking sb
+                JOIN SERVICE s ON s.ServiceID = sb.ServiceID
+                JOIN RESERVATION r ON r.ReservationID = sb.ReservationID
+                JOIN CUSTOMER c ON c.CustomerID = r.CustomerID
+                ORDER BY sb.ServiceBookingID DESC
+            """)
+            return jsonify(cursor.fetchall())
+    except mysql.connector.Error as e:
+        db.rollback()
+        return jsonify({"error": str(e)}), 400
+    finally:
+        db.close()
+
+@app.route('/service-bookings/<int:booking_id>', methods=['DELETE'])
+@require_api_key
+def delete_service_booking(booking_id):
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+    try:
+        cursor.execute("DELETE FROM service_booking WHERE ServiceBookingID=%s", (booking_id,))
+        db.commit()
+        return jsonify({"message": "Service booking deleted"})
     except mysql.connector.Error as e:
         db.rollback()
         return jsonify({"error": str(e)}), 400
