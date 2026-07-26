@@ -6,6 +6,9 @@ The project was built to demonstrate practical, end-to-end database and backend 
 
 ## Screenshots
 
+**Login**
+![Login](./screenshots/login.png)
+
 **Dashboard**
 ![Dashboard](./screenshots/dashboard.png)
 
@@ -27,13 +30,8 @@ The project was built to demonstrate practical, end-to-end database and backend 
 **Services**
 ![Services](./screenshots/services.png)
 
-**Service Bookings**
-![Service Bookings](./screenshots/service-bookings.png)
-
 **Branches**
 ![Branches](./screenshots/branches.png)
-
-*(Drop the corresponding image files into a `screenshots/` folder in the project root, named as above.)*
 
 ## Features
 
@@ -125,6 +123,3 @@ python App.py
 ### 7. Open the app
 Go to **http://127.0.0.1:5000** in your browser and log in with the admin username and the password you chose in step 5. The frontend, API, and login are all served from this single address — there's no separate file to open.
 
-## License
-
-This project is for educational and portfolio purposes.
