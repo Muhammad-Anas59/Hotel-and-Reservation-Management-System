@@ -99,7 +99,7 @@ cd Hotel-and-Reservation-Management-System
 ### 2. Set up the database
 Install PostgreSQL locally (or point to any Postgres instance you have access to), then load the schema and sample data:
 ```
-psql "your_postgres_connection_url" -f SQL_Database_PostgreSQL.sql
+psql "your_postgres_connection_url" -f PostGre.sql
 ```
 
 ### 3. Create a `.env` file in the project root
