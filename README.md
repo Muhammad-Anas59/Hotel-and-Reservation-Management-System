@@ -1,13 +1,13 @@
 # Pearl Hotels — Hotel & Reservation Management System
 
-🔗 **Live demo:** [hotel-and-reservation-management-system-production.up.railway.app](https://hotel-and-reservation-management-system-production.up.railway.app)
+🔗 **Live App:** [pearl-hotels-management-system.duckdns.org](https://pearl-hotels-management-system.duckdns.org)
 📂 **Repo:** [github.com/Muhammad-Anas59/Hotel-and-Reservation-Management-System](https://github.com/Muhammad-Anas59/Hotel-and-Reservation-Management-System)
 
 A full-stack, multi-branch hotel management platform built for Pearl Hotels & Royal Stay Hotels. It replaces manual booking logs with a single dashboard that handles reservations, room availability, billing, staff records, and guest services in real time — backed by a properly normalized relational database rather than flat spreadsheets.
 
 The project was built to demonstrate practical, end-to-end database and backend design: a 3NF-normalized relational schema with enforced referential integrity, a Flask REST API that wraps every table in safe transactional endpoints, authenticated access with hashed credentials, and a live dashboard that reflects the true state of the business as soon as any action happens — book a room and it goes Occupied, create a reservation and a Pending payment is generated automatically, mark it Paid and the day's revenue updates instantly.
 
-It's deployed and running in production on Railway, backed by PostgreSQL — not just a local demo.
+It's deployed and running in production on AWS EC2, containerized with Docker and backed by PostgreSQL.
 
 ## Screenshots
 
@@ -55,9 +55,9 @@ It's deployed and running in production on Railway, backed by PostgreSQL — not
 ## Tech Stack
 
 - **Database:** PostgreSQL (3NF normalized, 10 tables, constraints, indexes)
-- **Backend:** Python, Flask REST API
+- **Backend:** Python, Flask REST API, served via Waitress
 - **Frontend:** HTML, CSS, Vanilla JavaScript
-- **Deployment:** Railway (managed Postgres + web service, environment-based config)
+- **Infrastructure:** Docker & Docker Compose, AWS EC2, Nginx reverse proxy, Let's Encrypt SSL (Certbot), DuckDNS
 - **Security:** bcrypt password hashing, Flask-Limiter rate limiting, API-key-authenticated endpoints
 
 ## Database Design
@@ -69,7 +69,14 @@ It's deployed and running in production on Railway, backed by PostgreSQL — not
 
 ## Deployment
 
-The app runs in production on **Railway**, with a managed PostgreSQL instance and the Flask app deployed directly from this GitHub repo (auto-deploys on push).
+The app runs in production on a self-managed **AWS EC2 instance** (Ubuntu, t3.micro, within the AWS Free Tier), containerized with **Docker Compose**:
+
+- The Flask app and PostgreSQL each run in their own isolated container, on a private Docker network — Postgres is not exposed outside the host.
+- **Nginx** runs on the host as a reverse proxy, routing public traffic on ports 80/443 to the app container's internal port.
+- **Certbot** (Let's Encrypt) issues and auto-renews a free SSL certificate for the public domain.
+- The public domain (`pearl-hotels-management-system.duckdns.org`) is a free dynamic DNS hostname from **DuckDNS**, pointed at the EC2 instance's public IP.
+- Secrets (DB credentials, API key, admin password hash) are kept in environment files (`.env` / `app.env`) on the server, excluded from git via `.gitignore`, and never committed to the repo.
+- Data persists in a named Docker volume, independent of container restarts/rebuilds.
 
 Originally built against MySQL, the project was fully migrated to PostgreSQL for deployment. A few real differences had to be handled during the migration, rather than a drop-in swap:
 
@@ -78,8 +85,6 @@ Originally built against MySQL, the project was fully migrated to PostgreSQL for
 - **Date functions** — `CURDATE()` → `CURRENT_DATE`.
 - **Sequence continuity** — after loading sample data with explicit IDs, each table's sequence counter is reset with `setval(pg_get_serial_sequence(...))` so the next real record created by the app doesn't collide with existing sample IDs.
 
-Environment variables (database URL, API key, admin credentials, allowed origins) are configured directly in Railway's dashboard rather than committed to the repo.
-
 ## Security
 
 - **Authentication:** Single-admin login gate. The API key required for every data endpoint is never stored in the frontend — it's issued by the server only after a successful login, and kept in `sessionStorage` for the duration of the session.
@@ -87,61 +92,16 @@ Environment variables (database URL, API key, admin credentials, allowed origins
 - **Rate limiting:** The `/login` route is limited to 5 attempts per minute per IP address (via `Flask-Limiter`) to slow brute-force attempts.
 - **Same-origin serving:** The frontend is served directly by Flask (`/`) rather than as a separate static file, which avoids CORS misconfiguration entirely and keeps the app self-contained for deployment.
 - **Parameterized queries throughout** — no raw string interpolation into SQL anywhere in the codebase.
+- **Network isolation:** PostgreSQL is only reachable from the app container (not exposed on the public internet); the raw application port is closed at the firewall level, with all public traffic routed through Nginx over HTTPS.
 
-## How to Run Locally
+## Running with Docker (as deployed in production)
 
-### 1. Clone the repository
 ```
-git clone https://github.com/Muhammad-Anas59/Hotel-and-Reservation-Management-System.git
-cd Hotel-and-Reservation-Management-System
-```
-
-### 2. Set up the database
-Install PostgreSQL locally (or point to any Postgres instance you have access to), then load the schema and sample data:
-```
-psql "your_postgres_connection_url" -f PostGre.sql
+docker compose up -d --build
 ```
 
-### 3. Create a `.env` file in the project root
-```
-DATABASE_URL=postgresql://your_user:your_password@localhost:5432/your_database
-
-API_KEY=generate_a_random_string_here
-ALLOWED_ORIGINS=http://localhost:5000
-
-ADMIN_USERNAME=admin
-ADMIN_PASSWORD_HASH=generate_this_in_step_5
-
-FLASK_DEBUG=False
-```
-
-Generate a random `API_KEY` with:
-```
-python -c "import secrets; print(secrets.token_hex(24))"
-```
-
-### 4. Create a virtual environment and install dependencies
-```
-python -m venv venv
-venv\Scripts\Activate.ps1
-pip install -r requirements.txt
-```
-
-### 5. Generate your admin password hash
-Pick a password, then run:
-```
-python -c "import bcrypt; print(bcrypt.hashpw(b'your_chosen_password', bcrypt.gensalt()).decode())"
-```
-Paste the output into `.env` as `ADMIN_PASSWORD_HASH`. The plain password itself is never stored anywhere — only the hash.
-
-### 6. Run the application
-```
-python App.py
-```
-
-### 7. Open the app
-Go to **http://127.0.0.1:5000** in your browser and log in with the admin username and the password you chose in step 5. The frontend, API, and login are all served from this single address — there's no separate file to open.
+This builds the Flask app image and starts it alongside a PostgreSQL container, with the schema auto-loaded from `PostGre.sql` on first run. Requires a `.env` (for Compose's own Postgres container config) and an `app.env` (for the Flask app's runtime environment variables) in the project root — see `docker-compose.yml` for the exact variables each expects.
 
 ---
 
-Or skip all of the above and just try the [live demo](https://hotel-and-reservation-management-system-production.up.railway.app) directly.
+Visit the [live application](https://pearl-hotels-management-system.duckdns.org).
