@@ -1,0 +1,28 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: hotel_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: hotel_management
+      POSTGRES_USER: hotel_admin
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./PostGre.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "127.0.0.1:5432:5432"
+
+  app:
+    build: .
+    container_name: hotel_app
+    restart: unless-stopped
+    depends_on:
+      - db
+    env_file:
+      - app.env
+    ports:
+      - "8001:5000"
+
+volumes:
+  pgdata:
